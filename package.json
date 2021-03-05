@@ -1,0 +1,22 @@
+{
+  "name": "zenn-docs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yskszk63/zenn-docs.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yskszk63/zenn-docs/issues"
+  },
+  "homepage": "https://github.com/yskszk63/zenn-docs#readme",
+  "dependencies": {
+    "zenn-cli": "^0.1.75"
+  }
+}
