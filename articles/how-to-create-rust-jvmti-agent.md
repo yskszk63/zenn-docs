@@ -41,11 +41,9 @@ $ cargo new --lib jvmti-study
 $ cd jvmti-study
 ```
 
-動的ライブラリ用にします。
+クレートを動的ライブラリ用にします。
 
-```toml
-Cargo.toml
-----------
+```toml:Cargo.toml
 ...
 [lib]
 crate-type = ["cdylib"]
@@ -114,9 +112,10 @@ JVMからのエントリポイントは下記です。
   + 起動時に動作するエージェントのエントリポイントです
   + JVMは初期化が終わっていないので、この時点ではJNI関数にアクセスできません。
 - `Agent_OnAttach`
-  + JVM動作中に動的にアタッチするエージェントのエントリポイントです
+  + JVM動作中に動的にアタッチするエージェントのエントリポイントです。
 - `Agent_OnUnload`
   + JVMTIエージェント終了時のエントリポイントです
+  + OnLoad / OnAttach時に作成したjvmtiEnvにアクセスできないため、必要な場合はVmDeathイベントにリリース処理を実装したほうがやりやすいと思われます。
 
 ```rust:src/lib.rs
 ...
@@ -202,6 +201,138 @@ $ kill 84459
 Good bye.
 ```
 
-TODO イベント、環境の管理
+## jvmtiEnvの取得
 
-# おわり
+jvmtiEnvはJNIEnvのようにJVMTIの関数群が格納されている構造体です。
+JNIのJNIEnvと同様に[GetEnv](https://docs.oracle.com/en/java/javase/16/docs/specs/jni/invocation.html#getenv)関数で取得することができます。
+GetEnvに渡す`version`をJNIのバージョンではなく、`JVMTI_VERSION`とすることでjvmtiEnvを取得することができます。
+
+```rust:src/lib.rs
+#[no_mangle]
+pub extern "C" fn Agent_OnLoad(
+    vm: *mut sys::JavaVM,
+    _options: *const std::os::raw::c_char,
+    _reserved: *const std::ffi::c_void,
+) -> sys::jint {
+    println!("Hello, JVMTI!");
+
+    let mut jvmti_env = std::ptr::null_mut();
+    let jvmti_env = unsafe {
+        let get_env = (**vm).GetEnv.unwrap();
+        if get_env(vm, &mut jvmti_env, sys::JVMTI_VERSION as i32) != sys::JNI_OK as i32 {
+            eprintln!("failed to get jvmtiEnv");
+            return -1;
+        }
+        jvmti_env as *mut sys::jvmtiEnv
+    };
+
+    0
+}
+```
+
+## イベントのフック
+
+JVMから発火される様々な[イベント](https://docs.oracle.com/en/java/javase/16/docs/specs/jvmti.html#EventIndex)をフックすることができます。
+[SetEventCallbacks](https://docs.oracle.com/en/java/javase/16/docs/specs/jvmti.html#SetEventCallbacks)と[SetEventNotificationMode](https://docs.oracle.com/en/java/javase/16/docs/specs/jvmti.html#SetEventNotificationMode)によってイベントをフックすることができます。
+
+```rust:src/lib.rs
+unsafe extern "C" fn on_vm_init(_jvmti_env: *mut sys::jvmtiEnv, _jni_env: *mut sys::JNIEnv, _thread: sys::jthread) {
+    println!("on vm init.");
+}
+
+unsafe extern "C" fn on_vm_death(_jvmti_env: *mut sys::jvmtiEnv, _jni_env: *mut sys::JNIEnv) {
+    println!("on vm death");
+}
+...
+#[no_mangle]
+pub extern "C" fn Agent_OnLoad(
+    vm: *mut sys::JavaVM,
+    options: *const std::os::raw::c_char,
+    _reserved: *const std::ffi::c_void,
+) -> sys::jint {
+...
+    let callbacks = sys::jvmtiEventCallbacks {
+        VMInit: Some(on_vm_init),
+        VMDeath: Some(on_vm_death),
+        ..Default::default()
+    };
+    unsafe {
+        let set_event_callback = (**jvmti_env).SetEventCallbacks.unwrap();
+        if set_event_callback(jvmti_env, &callbacks, std::mem::size_of::<sys::jvmtiEventCallbacks>() as i32) != sys::JNI_OK {
+            eprintln!("failed to set event callbacks.");
+            return -1;
+        }
+    };
+    unsafe {
+        let set_event_notification_mode = (**jvmti_env).SetEventNotificationMode.unwrap();
+        if set_event_notification_mode(jvmti_env, sys::jvmtiEventMode_JVMTI_ENABLE, sys::jvmtiEvent_JVMTI_EVENT_VM_INIT, std::ptr::null_mut()) != sys::JNI_OK {
+            eprintln!("failed to set event notification mode.");
+            return -1;
+        }
+        if set_event_notification_mode(jvmti_env, sys::jvmtiEventMode_JVMTI_ENABLE, sys::jvmtiEvent_JVMTI_EVENT_VM_DEATH, std::ptr::null_mut()) != sys::JNI_OK {
+            eprintln!("failed to set event notification mode.");
+            return -1;
+        }
+    };
+...
+}
+```
+
+```bash
+$ java -agentpath:target/debug/libjvmti_study.so Test
+Hello, JVMTI!
+on vm init.
+Hello, world!
+^Con vm death
+Good bye.
+```
+
+## JVMTIエージェント毎の環境
+
+下記でJVMTIエージェント毎の環境を設定、取得することができます。
+エージェントごとの環境へのポインタはJVMによって管理されます。
+
+- [SetEnvironmentLocalStorage](https://docs.oracle.com/en/java/javase/16/docs/specs/jvmti.html#SetEnvironmentLocalStorage)
+- [GetEnvironmentLocalStorage](https://docs.oracle.com/en/java/javase/16/docs/specs/jvmti.html#GetEnvironmentLocalStorage)
+
+```rust:src/lib.rs
+unsafe extern "C" fn on_vm_init(jvmti_env: *mut sys::jvmtiEnv, _jni_env: *mut sys::JNIEnv, _thread: sys::jthread) {
+    println!("on vm init.");
+
+    let get_environment_local_storage = (**jvmti_env).GetEnvironmentLocalStorage.unwrap();
+    let mut env = std::ptr::null_mut();
+    if get_environment_local_storage(jvmti_env, &mut env) != sys::JNI_OK {
+        eprintln!("failed to set environment local storage.");
+        return
+    }
+    let env = std::sync::Arc::<MyEnv>::from_raw(env as _);
+    println!("env: {:?}", env);
+}
+...
+#[no_mangle]
+pub extern "C" fn Agent_OnLoad(
+    vm: *mut sys::JavaVM,
+    options: *const std::os::raw::c_char,
+    _reserved: *const std::ffi::c_void,
+) -> sys::jint {
+...
+    let options = (!options.is_null()).then(|| unsafe {
+        std::ffi::CStr::from_ptr(options).to_string_lossy().to_string()
+    });
+    let env = std::sync::Arc::new(MyEnv { options, });
+    let env = std::sync::Arc::into_raw(env);
+
+    unsafe {
+        let set_environment_local_storage = (**jvmti_env).SetEnvironmentLocalStorage.unwrap();
+        if set_environment_local_storage(jvmti_env, env as _) != sys::JNI_OK {
+            eprintln!("failed to set environment local storage.");
+            return -1;
+        }
+    }
+...
+}
+```
+
+# おわりに
+
+これだけできると、何か面白いものが作れそう。
