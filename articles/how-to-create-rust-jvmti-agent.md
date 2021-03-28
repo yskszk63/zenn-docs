@@ -3,7 +3,7 @@ title: "RustでJVMTIエージェントを作る"
 emoji: "🍣"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["rust", "java"]
-published: false
+published: true
 ---
 
 需要は少ないと思いますが、RustでJavaのJVMTIエージェントを作る方法を書きます。
