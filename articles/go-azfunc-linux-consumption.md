@@ -3,7 +3,7 @@ title: "鉱夫さんをやつけたいのでGoでAzure Functions Linux従量課�
 emoji: "🍣"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["go", "azure", "azurefunctions"]
-published: false
+published: true
 ---
 
 一月ほど前にGitHub Actionsで仮想通貨をホリホリするPull Requestを仕掛けられました。
