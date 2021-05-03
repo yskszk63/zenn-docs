@@ -17,6 +17,14 @@ Pull Requestが来ると、Pull RequestでトリガーされるGitHub Actionsの
 
 https://github.com/yskszk63/cancel-workflow-run
 
+:::message
+既にGitHubにより色々と対策されている様なので、このGitHub App自体は役に立たないかもしれません。
+:::
+
+# 作戦
+
+GitHub Actionsのジョブ起動をフックし、当該ジョブがPull Requestにより新規作成された定義である場合にキャンセルできれば私のケースの場合、十分です。
+
 最初はバックエンドをPython + HerokuのFreeプランで作成していました。
 ただ、GitHubのWebHookは10秒以内にレスポンスを返さないとTimed Outとして記録されてしまいます。
 HerkuのFreeプランはすぐに寝てしまい、WebHookがある時はだいたい寝ているので、Timed Outで履歴が残ってしまい気持ち悪いです。
@@ -133,7 +141,7 @@ HTTPのリッスンをするまでなるべく止めない実装にしたほう�
 
 # デプロイ
 
-Linux従量課金プランの場合、Kudoがいないらしいです。
+Linux従量課金プランの場合、Kudoが無いようです。
 そのため他のプランに比べデプロイに色々制約があります。
 
 アプリケーション設定(環境変数)の`WEBSITE_RUN_FROM_PACKAGE`にデプロイしたいディレクトリ構造一式を格納したzipファイルのURLを指定し、
@@ -141,10 +149,7 @@ Linux従量課金プランの場合、Kudoがいないらしいです。
 
 私は`WEBSITE_RUN_FROM_PACKAGE`へGitHubのリリースを指定し、GitHub Actionsで`/admin/host/synctriggers?<_masterキー>`を叩くことでPush毎にテスト環境へデプロイされるようにしました。
 
-# さいごに
-
-少し長くなりました。ここまで読んで頂いてありがとうございます。
-
-鉱夫さんは一週間程度でGitHubがやつけてくれました。もうホリホリされていません。
-それまでに二回ほどGitHub Appでやつけましたが、それ以降は完全趣味の世界です。
-タイトル少し釣り気味でした。ごめんなさい。
+:::message
+当初、[Azure/functions-action](https://github.com/Azure/functions-action)を試していましたが、何故かpackageがsquashfsとして固められてしまい上手く動きませんでした。
+[このIssue](https://github.com/Azure/functions-action/issues/39)を見ると、どうやらLinux従量課金プランで少し動きが怪しいようです。解消を期待したいです。
+:::
