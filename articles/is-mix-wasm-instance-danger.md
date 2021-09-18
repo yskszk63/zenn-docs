@@ -7,7 +7,7 @@ published: false
 ---
 
 WASMの複数インスタンス間で[WebAssembly.Memory](https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Global_Objects/WebAssembly/Memory)を共有すればダイナミックリンクみたいなことが実現できるかも。と思い調査したときのメモです。
-結論としては、WASMインスタンス間での`WebAssembly.Memory`の共有は、私の力量では怖いということが分かりました。(2021年9月現在)
+結論としては、WASMインスタンス間での`WebAssembly.Memory`の共有は、私の力量では危ないということが分かりました。(2021年9月現在)
 
 下記バージョンのClangを利用して確認しています。
 
