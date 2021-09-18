@@ -7,7 +7,7 @@ published: false
 ---
 
 WASMの複数インスタンス間で[WebAssembly.Memory](https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Global_Objects/WebAssembly/Memory)を共有すればダイナミックリンクみたいなことが実現できるかも。と思い調査したときのメモです。
-結論としては、`WebAssembly.Memory`以外にも状態があるなどして、現状のWASMの仕様や私の力量のため難しいということがわかりました。
+結論としては、WASMインスタンス間での`WebAssembly.Memory`の共有は、私の力量では怖いということが分かりました。(2021年9月現在)
 
 下記バージョンのClangを利用して確認しています。
 
@@ -21,9 +21,11 @@ clang version 12.0.1
 
 はじめに、WASMインスタンスは下記状態があります。
 
-- [WebAssembly.Memory](https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Global_Objects/WebAssembly/Memory) ... いわゆるメモリでClangが生成したコードではヒープやスタックの一部、定数が格納されているようでした。
+- [WebAssembly.Memory](https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Global_Objects/WebAssembly/Memory) ... いわゆるメモリで、Clangが生成したコードではヒープやスタックの一部、定数が格納されているようでした。
 - [WebAssembly.Global](https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Global_Objects/WebAssembly/Global) ... WASM内の環境、外側の環境からアクセスできるグローバル変数を表します。
 - [WebAssembly.Table](https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Global_Objects/WebAssembly/Table) ... (現状は)WASM内からアクセスする関数ポインタを管理します。
+
+これらの状態がWASMインスタンス間で適切に隔離・共有できていれば、`WebAssembly.Memory`を共有した複数WASMインスタンスの動作が可能だと考えています。
 
 # 試したこと
 
@@ -125,6 +127,8 @@ HELLO
 ```
 
 `hello`と出力されずに`HELLO`で上書きされてしまいましたね。
+複数のWASMインスタンスで`WebAssembly.Memory`を共有する場合、dataセクションのオフセットを適切に調整してあげないと、
+不意に定数が書き換わってしまうと思われます。
 
 ## スタックの管理
 
@@ -192,6 +196,11 @@ $ deno run --allow-read /home/ysk/work/is-mix-wasm-instance-danger/03_stack/run.
 
 ポインタと`WebAssembly.Global`が一致しているので、`WebAssembly.Global`でスタックのが管理されていることがわかりますね。
 (最後、スタックオーバーフローしている。。)
+
+`WebAssembly.Memory`を共有しただけではWASMインスタンスそれぞれで、この`WebAssembly.Global`が共有できていないので、
+スタック上に確保したバッファ等が変な動きをしてしまいそうです。
+この`WebAssembly.Global`をエクスポートする方法が[wasm-ld](https://lld.llvm.org/WebAssembly.html)にはなさそうなので、
+状態の共有はなかなかむずかしそうです。
 
 ## ぐちゃぐちゃ
 
