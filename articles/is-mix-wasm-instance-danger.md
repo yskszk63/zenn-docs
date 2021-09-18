@@ -3,7 +3,7 @@ title: "何も考えずにWASMインスタンスを混ぜると危ないかも"
 emoji: "🥶"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["wasm"]
-published: false
+published: true
 ---
 
 WASMの複数インスタンス間で[WebAssembly.Memory](https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Global_Objects/WebAssembly/Memory)を共有すればダイナミックリンクみたいなことが実現できるかも。と思い調査したときのメモです。
