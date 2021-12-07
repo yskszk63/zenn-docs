@@ -1,12 +1,12 @@
 ---
-title: "JavaでFFI"
+title: "JavaでFFI (Project Panama)"
 emoji: "📑"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["Java", "FFI"]
-published: false
+published: true
 ---
 
-これは[Javaのカレンダー | Advent Calendar 2021](https://qiita.com/advent-calendar/2021/java)のN日目の記事です。 FIXME
+これは[Javaのカレンダー | Advent Calendar 2021](https://qiita.com/advent-calendar/2021/java)の7日目の記事です。
 
 # 概要
 
@@ -64,8 +64,8 @@ $
 
 簡単にFFIが出来ました。そうなると、個人的にはクラスローダが絡むと出てくる`java.lang.UnsatisfiedLinkError`が気になってきます。
 ある動的ライブラリをロードできるのは、一つのクラスローダ縛りのあれです。
-
-理由は無いですが、Native側はRustで書きました。ほぼ同じ内容のライブラリをふたつ用意して読み込んでみます。
+ほぼ同じ内容のライブラリをふたつ用意して読み込んでみます。
+(理由は無いですが、Native側はRustで書きました。)
 
 ```
 .
@@ -273,6 +273,8 @@ Hello, world!v2
 できました！
 
 # さいごに
+
+これらのコードは<https://github.com/yskszk63/panama-test/tree/master>へ置きました。
 
 暫くJavaから離れていたので、Project Panamaに限らず最近のJavaの進化には驚かされるばかりです。
 
