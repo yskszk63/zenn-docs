@@ -17,6 +17,6 @@
   },
   "homepage": "https://github.com/yskszk63/zenn-docs#readme",
   "dependencies": {
-    "zenn-cli": "^0.1.99"
+    "zenn-cli": "^0.2.11"
   }
 }
