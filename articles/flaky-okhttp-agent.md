@@ -3,7 +3,7 @@ title: "OkHttpをナマケモノにするjavaagentを書いた"
 emoji: "🦥"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: []
-published: false
+published: true
 ---
 
 # OkHttpをナマケモノにするjavaagentを書いた
@@ -24,7 +24,7 @@ OkHttpClient のレスポンスを HTTP 429 Too Many Requests が返ってきて
 JVM の仕組みで、 Java プログラムの起動時または動的にエージェントをアッタッチさせてバイトコード書き替えをするための仕組みです。
 バイトコード書き替えにより、トレーシングやメトリックスの収集、デバッグのための情報収集などの仕組みをソースコードの変更無しに組み込むことができます。
 
-たとえば起動時にバイトこの仕組みを使いたい場合は、下記シグニチャのメソッドを用意し、
+たとえば起動時にこの仕組みを使いたい場合は、下記シグニチャのメソッドを用意し、
 
 ```java
  public static void agentmain(String agentArgs, Instrumentation inst) 
