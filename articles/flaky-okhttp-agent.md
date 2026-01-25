@@ -19,6 +19,8 @@ API クライアントなどを実装するにあたり、外部サービスの 
 OkHttpClient のレスポンスを HTTP 429 Too Many Requests が返ってきているように見せる作りになっています。
 使い方はリポジトリをご参照下さい。
 
+https://github.com/yskszk63/flaky-okhttp-agent
+
 ## Javaプログラミング言語エージェントとは
 
 JVM の仕組みで、 Java プログラムの起動時または動的にエージェントをアッタッチさせてバイトコード書き替えをするための仕組みです。
