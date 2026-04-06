@@ -6,11 +6,18 @@ topics: ["freerdp"]
 published: false
 ---
 
+この記事では、
+
+- FreeRDP の AAD 認証を外部化し
+- D-Bus 経由でトークン取得する Broker を実装する
+
+という構成を紹介します
+
 ## 背景
 
-RDP で Windows に接続する際に、接続するユーザが Entra ID (旧 Azure Active Directory) 管理のユーザの場合、 OAuth2 認証が必要となる。
+RDP で Windows に接続する際に、接続するユーザが Entra ID (旧 Azure Active Directory) 管理のユーザの場合、 OAuth2 認証が必要となります。
 Linux でのRDP 接続によく利用される FreeRDP では、まだこのあたりのサポートがまだ薄いため、接続には苦労します。
-→ v3 で徐々に実装されている状況
+→ v3 で徐々に実装・改善されている状況のようです
 
 ```bash
 $ xfreerdp /v:w11 /sec:aad
@@ -40,11 +47,11 @@ icrosoftonline.com%2Fcommon%2Foauth2%2Fnativeclient
 Paste redirect URL here: 
 ```
 
-→ Entra ID の場合は、 OAuth2 の認可コードフローを途中まで進めてリダイレクトした URL を貼りつける必要がある
+→ Entra ID 管理のユーザの場合は、 OAuth2 の認可コードフローを途中まで進めてリダイレクトした URL を貼りつける必要がある
 
 これは、さすがに実用的では無いため、この面倒な状況を解決しておきたい。と思い、まずは libfreerdp を利用したクライアントを実装しました。
 が、やはり実用的にするにはかなりボリュームになってしまうため、断念しました。
-→ クリップボードの同期や、動的リサイズ、 動的チャネル (drdynvc)、単純な画面描画 (HiDPI 対応やできれば GPU 使いたい)、 Wayland でのキーボードのよこどり (keyboard_shortcuts_inhibitor) 、ほか
+→ クリップボードの同期や、動的リサイズ、 動的チャネル (drdynvc)、単純な画面描画 (HiDPI 対応やできれば GPU 使いたい)、 Wayland でのキーボードのよこどり (keyboard_shortcuts_inhibitor) 、ほか...
 
 OAuth2 なので、同じスコープで認証できる OAuth2 のアプリケーションを作成すれば良いのでは。と考えましたが、スコープに接続先デバイス名が埋め込まれるため、デバイス毎に異なるスコープ定義の管理も別途必要となり現実的ではありません。
 そのため `common` テナントに定義されている OAuth2 アプリケーションを利用するのが良いのですが、 redirect_uri がネイティブクライアント用のため、 WEB でさくっと作成することもできません。
