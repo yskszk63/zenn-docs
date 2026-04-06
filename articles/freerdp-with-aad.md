@@ -3,7 +3,7 @@ title: "FreeRDP で Entra ID (AAD) のユーザで接続する"
 emoji: "😸"
 type: "tech"
 topics: ["freerdp"]
-published: false
+published: true
 ---
 
 この記事では、
