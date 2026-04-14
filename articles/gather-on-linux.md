@@ -1,9 +1,9 @@
 ---
-title: "nspawn と mstakc と Wine を使って Linux で Gather の Windows アプリを動かす"
+title: "nspawn と mstack と Wine を使って Linux で Gather の Windows アプリを動かす"
 emoji: "🍷"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["systemd-nspawn", "systemd-mstack", "wine"]
-published: false
+published: true
 ---
 ## 背景
 
@@ -12,15 +12,15 @@ published: false
 Linux 版が無いなら、 Wine でいいじゃないの。
 ということで、試してみました。
 
-## 使ったもの
+## 使った技術
 
 環境を汚したくないので、コンテナで動かすことは必須と考え、下記のような構成としました。
 
-- systemd-nspawn
-- systemd-mstack
-- Wine
+- 1. nspawn (systemd)
+- 2. mstack (systemd)
+- 3. Wine
 
-### systemd-nspawn
+### 1. nspawn (systemd)
 
 systemd に付属している、名前空間に閉じ込めたコンテナを動作させるためのもの。
 そこそこ古くからあり、私個人は Steam を動かすために使ってました。これも環境を汚したくなかったためです。
@@ -29,12 +29,12 @@ systemd に付属している、名前空間に閉じ込めたコンテナを動
 
 Docker や Podman との違いは、環境を隔離する事のみにフォーカスしている。という点です。
 Docker 等は、ポータビリティにフォーカスしているため、ストレージは基本イミュータブルです。
-systemd-nspawn のストレージはミュータブルで、どちらかというと、仮想マシンの使い勝手に近いです。
+nspawn のストレージはミュータブルで、どちらかというと、仮想マシンの使い勝手に近いです。
 lxc なんかが親戚ですね。
-systemd-nspawn は、 systemd に付属していて、最近の Linux では割とセットアップ不要で簡単に動作させることができるため、
+nspawn は、 systemd に付属していて、最近の Linux では割とセットアップ不要で簡単に動作させることができるため、
 昔から愛用しています。
 
-### systemd-mstack
+### 2. mstack (systemd)
 
 つい先日リリースされた systemd 260 で同梱された機能です。
 Docker などで使われている overlayfs のレイヤーを簡単に記述できマウントできます。
@@ -42,7 +42,7 @@ Docker などで使われている overlayfs のレイヤーを簡単に記述�
 
 例えば、下記のようなディレクトリ構造を
 
-```
+```bash
 $ fd .
 test.mstack/
 test.mstack/layer@10/
@@ -54,7 +54,7 @@ test.mstack/rw/
 
 `sudo mount -t mstack test.mstack/ dest` とすると、
 
-```
+```bash
 $ ls dest
 a.txt  b.txt
 ```
@@ -64,7 +64,7 @@ a.txt  b.txt
 
 そのマウントポイントに書き込むと...
 
-```
+```bash
 $ sudo touch dest/c.txt
 $ fd . test.mstack
 test.mstack/layer@10/
@@ -83,15 +83,15 @@ test.mstack/rw/work/work/
 `test.mstack/rw/data/` を `test.mstack/layer@30` として移動させると、"コミット" したように扱うことができます。
 ディレクトリベースでレイヤーを定義できるので、柔軟にかつ簡単に `overlayfs` を扱うことができて、とても嬉しいものとなってます。
 
-systemd-nspawn との連携も充実していて、 `systemd-nspawn --mstack=<name>.mstack` でコンテナのルートディレクトリとしてマウントすることができます。
+nspawn との連携も充実していて、 `systemd-nspawn --mstack=<name>.mstack` でコンテナのルートディレクトリとしてマウントすることができます。
 
-### Wine
+### 3. Wine
 
 いわずと知れた、 Linux で Windows アプリケーションを動作させるためのソフトウェアです。
 Windows の MinGW とは逆の事をやっているイメージでしょうか。
 Windows の Win32 API 等を Linux 上でエミュレーションして、 Windows ソフトウェアを動作させることができます。
 
-Arch Linux に Wine を導入すると、結構環境が汚れてしまうので、私は昔から systemd-nspawn 上で動作させています。
+Arch Linux に Wine を導入すると、結構環境が汚れてしまうので、私は昔から nspawn 上で動作させています。
 
 (余談ですが、Proton が出る前までは、私が Steam でゲームを買う目的は Wine で動作させることだった時期がありました。)
 
@@ -99,7 +99,7 @@ Arch Linux に Wine を導入すると、結構環境が汚れてしまうので
 
 ### 準備
 
-systemd-mstack で、下記のようにレイヤーを定義しました。
+mstack で、下記のようにレイヤーを定義しました。
 
 - `layer@10` ... `pacstrap base` のみしたもの
 - `layer@20` ... `multilib` を有効化し、 `wine` や必要となるソフトウェアをインストール
