@@ -3,7 +3,7 @@ title: "Fn::GetStackOutput の結果が反映されない場合は REVERT_DRIFT 
 emoji: "🙌"
 type: "tech"
 topics: ["aws", "cloudformation"]
-published: false
+published: true
 ---
 
 # はじめに (結論)
