@@ -2,7 +2,7 @@
 title: "nspawn と mstack と Wine を使って Linux で Gather の Windows アプリを動かす"
 emoji: "🍷"
 type: "tech" # tech: 技術記事 / idea: アイデア
-topics: ["systemd-nspawn", "systemd-mstack", "wine"]
+topics: ["nspawn", "mstack", "wine"]
 published: true
 ---
 ## 背景
