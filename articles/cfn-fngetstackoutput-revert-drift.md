@@ -341,3 +341,9 @@ $ aws stepfunctions describe-state-machine --state-machine-arn \
 
 CloudFormation の不具合でしょうか...？変更セット作成時の API 呼び出しのパラメータとテンプレートが一致しているので、テンプレートの比較すらされていないように見えます。
 ただ、AWS のサポート契約無いので報告ルートが無いのでここまでで今日はおしまい。
+
+---
+
+実験に使ったコードはこちらに置いています。
+
+https://github.com/yskszk63/cfn-revert-drift-test/
