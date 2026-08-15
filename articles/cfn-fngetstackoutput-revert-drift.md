@@ -339,5 +339,5 @@ $ aws stepfunctions describe-state-machine --state-machine-arn \
 再度変更セットを作成すると、差分無いよ。と言われます。ドリフトは検出できています。
 ![imageE4](/images/cfn-fngetstackoutput-revert-drift/imageE4.png)
 
-CloudFormation の不具合でしょうか...？変更セット作成時の API 呼び出しのパラメータとテンプレートが一致しているので、テンプレートの比較すらされていないように見える。
+CloudFormation の不具合でしょうか...？変更セット作成時の API 呼び出しのパラメータとテンプレートが一致しているので、テンプレートの比較すらされていないように見えます。
 ただ、AWS のサポート契約無いので報告ルートが無いのでここまでで今日はおしまい。
