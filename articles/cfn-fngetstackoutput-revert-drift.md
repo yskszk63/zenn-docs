@@ -252,18 +252,16 @@ CloudFormation のデプロイは下記のようなフローとなっていま�
 1. CreateChangeSet ... 変更セットを作成
 2. ExecuteChangeSet ... 変更セットを実行
 
-`Fn::GetStackOutput` の値が解決されるのは 2. ですが、1. の時点で差分無しとして判定されるため実行が不可となってしまっています。
-差分の有無の判定が下記二点のため、差分無しと判定されてしまうためです。
-
-- 現在デプロイされているテンプレート
-- デプロイしようとしているテンプレート
+`Fn::GetStackOutput` はスタックの作成・更新時に解決されます。
+しかし、標準の変更セットではテンプレート間に差分がないため、変更セットを実行するところまで到達できません。
+標準の変更セットでは、少なくともこのケースでは、前回デプロイされたテンプレートと今回のテンプレートだけでは差分がないため、変更なしと判定されているように思えます。
 
 同様の問題が SSM Parameter の動的参照 (`{{resolve:ssm:parameter-name:version}}`) でも発生します。
 (この問題が嫌なので、最近まで利用を避けてきました。)
 
 # `REVERT_DRIFT` モードは三点で比較
 
-2025 年 11 月ころに CloudFormation に追加されたドリフト対応変更セットは、先の二点に加えてリソースの現在値も比較に使います。
+2025 年 11 月ころに CloudFormation に追加されたドリフト対応変更セットは、先の二つに加えて、リソースの現在の状態（Actual state）も比較する3-way comparisonになります。
 
 [アナウンスのブログ - AWS CloudFormation のドリフト対応変更セットで設定のドリフトを安全に処理](https://aws.amazon.com/jp/about-aws/whats-new/2025/11/configuration-drift-enhanced-cloudformation-sets/)
 
@@ -278,7 +276,7 @@ CloudFormation のデプロイは下記のようなフローとなっていま�
 以降、「次へ」で進み「変更セットをレビュー」画面で「変更セットを作成」を押下
 ![image3](/images/cfn-fngetstackoutput-revert-drift/image3.png)
 
-しらばく待つと「変更セットのステータス」が「CREATE_COMPLETE」となる。
+しばらく待つと「変更セットのステータス」が「CREATE_COMPLETE」となる。
 ![image4](/images/cfn-fngetstackoutput-revert-drift/image4.png)
 
 期待通りに差分が検出されているので「変更セット実行」を押下しデプロイされるのを待つ
@@ -303,10 +301,11 @@ $ aws stepfunctions describe-state-machine --state-machine-arn \
 }
 ```
 
-`Hello` から `modified` に変りましたね！
-REVERT_DRIFT (ドリフト認識変更セット) は 現在の値と比較するため、 `Fn::GetStackOutput` が変更セット作成時点で評価されるためかと想像しています。
+`Hello` から `modified` に変わりましたね！
+なぜこれで `Fn::GetStackOutput` の変更が拾われるのかは AWS のドキュメントからは明確には分かりません。
+ただ、 `REVERT_DRIFT` は変更セット作成時にリソースの Actual state を取得して3-way comparisonするため、この過程で参照値が評価されている可能性があります。
 
-# (蛇足) 疑問。CloudFormation の不具合？
+# (蛇足) 疑問。CloudFormation の不具合でしょうか...？
 
 一度ふたつのスタックを削除して、問題の状態 (`Hello` -> `modified`: StepFunctions の定義は `Hello` のまま) にして標準変更セットを作成すると、差分は検出されています。
 ![imageE1](/images/cfn-fngetstackoutput-revert-drift/imageE1.png)
