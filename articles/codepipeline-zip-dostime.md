@@ -3,7 +3,7 @@ title: "git archive で作成した zip ファイルを AWS CodePipeline のビ�
 emoji: "⏳"
 type: "tech"
 topics: ["aws", "codepipeline", "Makefile", "zip"]
-published: false
+published: true
 ---
 # git archive で作成した zip ファイルを AWS CodePipeline のビルドのソースとして使う場合はDOSタイムスタンプをUTCで作成すべき
 
