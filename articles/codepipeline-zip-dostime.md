@@ -11,7 +11,7 @@ published: false
 
 - zip ファイルには DOS タイムスタンプと拡張タイムスタンプがある
 - DOS タイムスタンプはタイムゾーン無しのタイムスタンプ
-- 拡張タイムスタンプはタイムゾーンが考慮されたタイムスタンプ
+- 拡張タイムスタンプはUTCで格納されたタイムスタンプ
 - AWS CodePipeline は zip ファイル展開時にDOSタイムスタンプでmtimeを設定するようだ
 - AWS CodePipeline のソースとして利用する zip ファイルは `TZ=UTC` として作成すべき
 
@@ -24,14 +24,14 @@ published: false
 - .zip は `git archive` で生成している
 - 具体的なビルドタスクは `Makefile` に記述している
 
-→ コードリポジトリから AWS 環境に直接アクセスのできないような特殊な環境です
+→ コードリポジトリから AWS 環境に直接アクセスできない、特殊な環境です
 
 この構成で `make` を実行すると、
 
 > make: Warning: File 'Makefile' has modification time 30040 s in the future
 
 のような警告が発せられた。`make` は mtime に依存して処理を行なうため、タスクの記述内容によっては意図した通りに動かなかった。
-時計の進み方から、どこかでタイムゾーンの解釈の違いによる箇所があると思われる。調査を進めたところ、 CodePipeline の Zip 展開で DOS タイムスタンプから mtime を設定しているように伺えた。
+時計の進み方から、どこかでタイムゾーンの解釈の違いによる箇所があると思われる。調査を進めたところ、 CodePipeline の Zip 展開で DOS タイムスタンプから mtime を設定しているようにうかがえた。
 
 ## 検証
 
@@ -91,7 +91,7 @@ buildStage.addAction(new cpa.CommandsAction({
 
 期待値は、このビルド実行により `app-v1.jar` が生成されること。
 
-`TZ` 環境変数に対するDOS タイムスタンプの扱いは、 `git archive` も `zip` (info-zip) も同じように見えたため、 `zip` を利用している。
+`TZ` 環境変数に対するDOS タイムスタンプの扱いは、 `git archive` も `zip` (info-zip) も同じように見えたため、この実験では `zip` を利用している。
 
 ## 結果
 
@@ -156,7 +156,7 @@ app-pre-release.jar
 
 と警告があり、生成されたファイルは `app-pre-release.jar` で期待通りではなかった。
 
-### `TZ=UTC で Zip をアーカイブ
+### `TZ=UTC` で Zip をアーカイブ
 
 `TZ=UTC` で Zip をアーカイブしてビルドを実行したところ以下のような結果となった。
 
@@ -215,5 +215,10 @@ app-v1.jar
 
 ## まとめ
 
-- CodePipeline は DOS タイムスタンプを参照して mtime を設定するようだ
-- 諸々考慮し、ソースとする .zip ファイルは UTC として生成することが吉
+- zip ファイル の DOS タイムスタンプにはタイムゾーン情報がない
+- CodePipeline で zip ファイル を展開した際に、DOS タイムスタンプに由来すると考えられる mtime が設定されていた
+- make の誤動作を避けるため、CodePipeline のソースとして利用する zip ファイル は TZ=UTC で生成するのがよさそう
+
+なお、今回検証で利用したコードは下記に置いています。
+
+https://github.com/yskszk63/codepipeline-zip-dostime
